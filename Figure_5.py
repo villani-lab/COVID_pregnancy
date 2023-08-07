@@ -10,13 +10,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 
-# Figure 5a - CD8T UMAP
+# Figure 5A - CD8T UMAP
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
 colors = list(matplotlib.colormaps.get("tab10").colors + matplotlib.colormaps.get("Accent").colors)
 colors =[colors[x] for x in [0,1,2,3,4,5,6,15,8,9,10,11,16,13,12,7]]# rearraning colors to match patterns in UMAP
 ordered_clusters = cd8_data.obs["cluster_title"].unique().categories.to_list()
 cd8_colors = dict(zip(ordered_clusters, list(colors)))
-
 with PdfPages("CD8T_UMAP.pdf") as pdf:
     sc.set_figure_params(figsize=(11,6))
     g = sc.pl.umap(cd8_data, color='cluster_title', show=False, return_fig=True, palette = cd8_colors, size=5)
@@ -24,7 +23,8 @@ with PdfPages("CD8T_UMAP.pdf") as pdf:
     g.figure.tight_layout()
     pdf.savefig(g)
 
-# Figure 5a - CD8T heatmap
+
+# Figure 5A - CD8T heatmap
 genes2 = ['CD4','CD40LG','ITGB1', #c4
           'GZMH','NKG7',"CST7", #c3
           'KLRD1','FCGR3A','GZMB', #c2
@@ -39,7 +39,6 @@ genes2 = ['CD4','CD40LG','ITGB1', #c4
           "SELL","CCR7", # c5
           "MX1", "ISG15" ] # c11
 df= cd8_data[:,genes2].to_df().groupby(cd8_data.obs['final_res_1.8']).mean()
-
 sns.set(font_scale = 0.5)
 plt.clf()
 g=sns.clustermap(df, standard_scale=1, cmap="YlOrRd", col_cluster=False, row_cluster=False,xticklabels=True, yticklabels=True)
@@ -48,4 +47,11 @@ g.fig.set_size_inches(5,3)
 g.figure.tight_layout()
 plt.tight_layout()
 g.figure.savefig("CD8_markers_heatmap.pdf")
+
+
+# Figure 5B - differential abundance
+compute_DA_and_plot_per_category(data=cd8_data, category="Category", groupby="cluster_title", pdf=pdf, figsize=(5, 4), title="CD8 T cells", omit_clusters=["CD8T_7", "CD8T_8", "CD8T_16"], focus_clusters=["CD8T_2", "CD8T_3", "CD8T_4", "CD8T_12", "CD8T_13", "CD8T_14"])
+
+# Figure 5C - Clonal expansion per category
+
 
