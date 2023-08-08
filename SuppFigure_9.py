@@ -8,9 +8,6 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 sc.set_figure_params(dpi=300, dpi_save=300, vector_friendly=True)
 from matplotlib.backends.backend_pdf import PdfPages
 
-exec(open("/projects/COVID_pregnancy/Code_publication/functions.py").read())
-##############
-
 exec(open("functions.py").read())
 
 # Supp Figure 9A - where we have CD8 TCR data
