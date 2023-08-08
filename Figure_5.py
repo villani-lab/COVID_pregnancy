@@ -79,12 +79,21 @@ with PdfPages("barplot_expanded_TCRs_2categories.pdf") as pdf:
     plot_expanded_clones_per_clust(cd8_data_wo_doublets, pdf=pdf, figsize=(4,4), hue_order=["NonPreg_COVID", "Preg_COVID"], category="Category", pairs=["Preg_COVID", "NonPreg_COVID"], colors ={"Preg_COVID":"#EE6677", "NonPreg_COVID":"#4477AA"}, cluster_col='cluster_title', cluster_focus = ["CD8T_2","CD8T_3","CD8T_4"])
 
 
+# Figure 5E - Gene expression and protein expression characterizing CD8T_3
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+cd8_adt = an.read_h5ad("CD8T_ADT.h5ad") # From GSE239452
 
-# Figure 5F - COVID epitope hits projected on a UMAP
+with PdfPages("GEX_features.pdf") as pdf:
+    plot_hex_feature_plots(data=cd8_data, genes=["CD40LG", "GZMH", "ITGB1", "IL7R"], ncols=2, nrows=2, figsize=(5,4), gridsize=(200,200), pdf=pdf)
+with PdfPages("ADT_features.pdf") as pdf:
+    plot_hex_feature_plots(data=cd8_adt, genes=["prot_CD8", "prot_CD4","prot_CD45RO","prot_CD150","prot_CD57","prot_KLRG1"], ncols=3, nrows=3, figsize=(5, 4),gridsize=(200, 200), pdf=pdf)
+
+
+# Figure 5F, G - COVID epitope hits projected on a UMAP
 hits_A = pd.read_excel("VDJdb_hits_TRA_wAlleles.xlsx")
 hits_B = pd.read_excel("VDJdb_hits_TRB_wAlleles.xlsx")
 
-# I'm missing J gene in the hits file - to get them back I will merge it with the "expanded_clones" file
+# We're missing J gene in the hits file - to get them back let's merge it with the "expanded_clones" file
 hits_A = hits_A.rename(columns={"CDR3":"TRA_cdr3","J":'TRA_j_gene'})
 hits_B = hits_B.rename(columns={"CDR3":"TRB_cdr3","J":'TRB_j_gene'})
 hits = hits_A[['sample', 'TRB_cdr3', 'TRB_v_gene', 'TRA_j_gene', 'TRA_cdr3','TRA_v_gene', 'Category_2',"Epitope", "Epitope.gene", "Epitope.species"]].append(hits_B[['sample', 'TRB_cdr3', 'TRB_v_gene', 'TRB_j_gene', 'TRA_cdr3','TRA_v_gene', 'Category_2', "Epitope", "Epitope.gene", "Epitope.species"]])
@@ -126,3 +135,10 @@ with PdfPages("COVID_hits.pdf") as pdf:
     pdf.savefig(ax.figure)
 
 
+# Fig 5H - CD8 TCR diversity
+# part 1: prepare data for R code
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+df = cd8_data.obs[["sample","clone",'clone_prop', "Category_2"]].drop_duplicates().reset_index(drop=True)
+df=df.sort_values(by=["Category_2","sample","clone_prop"])
+df.to_csv("clone_prop_per_patient.csv")
+# => move to R code to compute Hill diversity index and to plot figure

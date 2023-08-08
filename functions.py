@@ -305,3 +305,42 @@ def plot_expanded_clones_per_clust(data, pdf, figsize, hue_order, category, pair
     annotator.configure(test='Mann-Whitney', comparisons_correction="BH", line_width=0.25).apply_and_annotate()
 
     pdf.savefig(ax.figure, bbox_inches='tight')
+
+
+
+# Plot feature plots using hex-bin summary
+# data - the anndata object
+# genes - a list of genes or protein to plot the expression of
+# ncols, nrows - number of columns and rows of figure panels
+# figsize - the figure size
+# grid size - the grid size for hex-bin summary
+# pdf - the pdf object to plot to figures into
+def plot_hex_feature_plots(data, genes, ncols, nrows, figsize, gridsize, pdf):
+    x = data.obsm["X_umap"][:, 0]
+    y = data.obsm["X_umap"][:, 1]
+
+    plt.clf()
+    count = 0
+    fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=figsize, dpi=500)
+    for i in range(nrows):
+        for j in range(ncols):
+            # After ploting all genes - remove the rest of the unused axes
+            if (count > (len(genes) - 1)):
+                fig.delaxes(axs[i][j])
+            else:
+                print(count)
+                gene = genes[count]
+                count += 1
+                ax = axs[i][j]
+                hb = ax.hexbin(x, y, C=data[:, gene].to_df()[gene], cmap='YlOrRd', gridsize=gridsize, linewidths=0.2)
+                ax.set_title(gene, fontsize=8, fontweight='bold')
+                ax.set_yticklabels([])
+                ax.set_xticklabels([])
+                ax.set_yticks([])
+                ax.set_xticks([])
+                ax.set_rasterization_zorder(10)
+                cbar = fig.colorbar(hb, ax=ax)
+                cbar.ax.tick_params(labelsize=6)
+
+    plt.tight_layout()
+    pdf.savefig(fig)
