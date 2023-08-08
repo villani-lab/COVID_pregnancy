@@ -138,7 +138,6 @@ with PdfPages("COVID_hits.pdf") as pdf:
 # Fig 5H - CD8 TCR diversity
 # part 1: prepare data for R code
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
-df = cd8_data.obs[["sample","clone",'clone_prop', "Category_2"]].drop_duplicates().reset_index(drop=True)
-df=df.sort_values(by=["Category_2","sample","clone_prop"])
-df.to_csv("clone_prop_per_patient.csv")
+curr = cd8_data[[x not in ['Doublets (CD4/CD8)','Doublets (Myeloid/CD8)','High-MT'] for x in cd8_data.obs["cluster_title"]],:].copy()
+curr.obs[["sample","clone","Category_2"]].to_csv("clones_per_patient.csv")
 # => move to R code to compute Hill diversity index and to plot figure
