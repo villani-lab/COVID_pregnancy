@@ -9,22 +9,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 exec(open("functions.py").read())
 
-import os
-os.chdir("/projects/home/rnormand/tmp/")
-exec(open("/projects/COVID_pregnancy/Code_publication/functions.py").read())
-data = an.read_h5ad("/projects/home/rnormand/tmp/AllCells_GEX.h5ad")
-cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad")
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
-##########
-
-
-data = an.read_h5ad("AllCells_GEX.h5ad")
 
 # Supp Figure 8A - all cells UMAP
+data = an.read_h5ad("AllCells_GEX.h5ad")
 sc.pl.umap(data, color="Lineage")
 
 
 # Supp Figure 8B - all cells lineage composition per patient
+data = an.read_h5ad("AllCells_GEX.h5ad")
 df = pd.crosstab(data.obs.loc[:, "sample"], data.obs.loc[:, "Lineage"])
 df = df.div(df.sum(axis=1), axis=0) * 100.0
 # Sample order - by Category_2, then by T cekk frequency
@@ -46,10 +38,12 @@ plt.show()
 
 
 # Supp Figure 8C - lineage marker feature plots
+data = an.read_h5ad("AllCells_GEX.h5ad")
 feature_plots_2(data, ["CD3D","CD8A","CD4","NCAM1","MS4A1","LYZ"], title="doublets", dot_size=10, figsize=(5,6))
 
 
 # Supp Figure 8D,E - all cells differential analysis
+data = an.read_h5ad("AllCells_GEX.h5ad")
 with PdfPages("GlobalUMAP_DA.pdf") as pdf:
     compute_DA_and_plot_per_category(data, category="Category", groupby="Lineage", pdf=pdf, title="Global UMAP", figsize=(5,4))
     compute_DA_and_plot_per_category(data, category="Category_2", groupby="Lineage", pdf=pdf, title="Global UMAP")
@@ -96,11 +90,13 @@ g.figure.savefig("CD4_CD8_split_umap.pdf")
 
 
 # Supp Figure 8I - T+NK interim object - marker genes feature plots
+data = an.read_h5ad("T_NK_interim.h5ad")
 feature_plots_2(data, ["CD3D","CD3G","CD8A","CD8B","CD4","NCAM1"], title="T_NK", dot_size=10, figsize=(5,6))
 
 
 # Supp Figure 8J,K - differential abundance CD8 T cells
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
 with PdfPages("CD8T_DA.pdf") as pdf:
-    compute_DA_and_plot_per_category(cd8_data, "Category_2", groupby="cluster_title", pdf=pdf, figsize=(7,4), title="CD8 T cells", omit_clusters = ["CD8T_7","CD8T_8","CD8T_16"])
     compute_DA_and_plot_per_category(cd8_data, "Category", groupby="cluster_title", pdf=pdf, figsize=(5,4), title="CD8 T cells", omit_clusters = ["CD8T_7","CD8T_8","CD8T_16"])
-    compute_DA_and_plot_per_category(data=cd8_data, category="Category", groupby="cluster_title", pdf=pdf, figsize=(5,4), title="CD8 T cells", omit_clusters =  ["CD8T_7","CD8T_8","CD8T_16"], focus_clusters = ["CD8T_2","CD8T_3","CD8T_4","CD8T_12","CD8T_13","CD8T_14"])
+    compute_DA_and_plot_per_category(cd8_data, "Category_2", groupby="cluster_title", pdf=pdf, figsize=(7,4), title="CD8 T cells", omit_clusters = ["CD8T_7","CD8T_8","CD8T_16"])
+
