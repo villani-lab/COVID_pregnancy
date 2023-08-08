@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import scanpy as sc
 import pandas as pd
 import matplotlib
+import seaborn as sns
 matplotlib.rcParams['pdf.fonttype'] = 42
 sc.set_figure_params(dpi=300, dpi_save=300, vector_friendly=True)
 from matplotlib.backends.backend_pdf import PdfPages
@@ -11,12 +12,12 @@ exec(open("functions.py").read())
 
 
 # Supp Figure 8A - all cells UMAP
-data = an.read_h5ad("AllCells_GEX.h5ad")
+data = an.read_h5ad("AllCells_GEX.h5ad") # From GSE239452
 sc.pl.umap(data, color="Lineage")
 
 
 # Supp Figure 8B - all cells lineage composition per patient
-data = an.read_h5ad("AllCells_GEX.h5ad")
+data = an.read_h5ad("AllCells_GEX.h5ad") # From GSE239452
 df = pd.crosstab(data.obs.loc[:, "sample"], data.obs.loc[:, "Lineage"])
 df = df.div(df.sum(axis=1), axis=0) * 100.0
 # Sample order - by Category_2, then by T cekk frequency
@@ -38,19 +39,19 @@ plt.show()
 
 
 # Supp Figure 8C - lineage marker feature plots
-data = an.read_h5ad("AllCells_GEX.h5ad")
+data = an.read_h5ad("AllCells_GEX.h5ad") # From GSE239452
 feature_plots_2(data, ["CD3D","CD8A","CD4","NCAM1","MS4A1","LYZ"], title="doublets", dot_size=10, figsize=(5,6))
 
 
 # Supp Figure 8D,E - all cells differential analysis
-data = an.read_h5ad("AllCells_GEX.h5ad")
+data = an.read_h5ad("AllCells_GEX.h5ad") # From GSE239452
 with PdfPages("GlobalUMAP_DA.pdf") as pdf:
     compute_DA_and_plot_per_category(data, category="Category", groupby="Lineage", pdf=pdf, title="Global UMAP", figsize=(5,4))
     compute_DA_and_plot_per_category(data, category="Category_2", groupby="Lineage", pdf=pdf, title="Global UMAP")
 
 
 # Supp Figure 8F - CD8T Feature plots for doublets
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 feature_plots_2(cd8_data, ["CD4","CD8A","CD8B","S100A9","S100A8","VCAN"], title="doublets", dot_size=10, figsize=(5,6))
 plt.clf()
 sc.set_figure_params(figsize=(3,3))
@@ -59,8 +60,8 @@ g.figure.tight_layout()
 g.figure.savefig("percent_mito.pdf")
 
 # Supp Figure 8G - Expression of CD4 and CD8 in various cell subsets
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
-cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad")
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad") # From GSE239452
 cluster_CD8T_3 = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_3: CD4, CD40LG, ITGB1, GZMH',:].copy()
 cd8_pos = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_2: NKG7, GZMH, CST7',:].copy()
 cd4_pos = cd4_data[cd4_data.obs['leiden_res_1']=='5',:].copy()
@@ -82,7 +83,7 @@ plt.show()
 
 
 # Supp Figure 8H - T+NK interim object - UMAP
-data = an.read_h5ad("T_NK_interim.h5ad")
+data = an.read_h5ad("T_NK_interim.h5ad") # From GSE239452
 sc.set_figure_params(vector_friendly=True, dpi_save=300, figsize=(5,4))
 g = sc.pl.umap(data, color = "leiden_res_1.8", return_fig=True, show=False, size=5)
 g.figure.tight_layout()
@@ -90,12 +91,12 @@ g.figure.savefig("CD4_CD8_split_umap.pdf")
 
 
 # Supp Figure 8I - T+NK interim object - marker genes feature plots
-data = an.read_h5ad("T_NK_interim.h5ad")
+data = an.read_h5ad("T_NK_interim.h5ad") # From GSE239452
 feature_plots_2(data, ["CD3D","CD3G","CD8A","CD8B","CD4","NCAM1"], title="T_NK", dot_size=10, figsize=(5,6))
 
 
 # Supp Figure 8J,K - differential abundance CD8 T cells
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 with PdfPages("CD8T_DA.pdf") as pdf:
     compute_DA_and_plot_per_category(cd8_data, "Category", groupby="cluster_title", pdf=pdf, figsize=(5,4), title="CD8 T cells", omit_clusters = ["CD8T_7","CD8T_8","CD8T_16"])
     compute_DA_and_plot_per_category(cd8_data, "Category_2", groupby="cluster_title", pdf=pdf, figsize=(7,4), title="CD8 T cells", omit_clusters = ["CD8T_7","CD8T_8","CD8T_16"])

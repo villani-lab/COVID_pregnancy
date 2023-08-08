@@ -8,10 +8,19 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 sc.set_figure_params(dpi=300, dpi_save=300, vector_friendly=True)
 from matplotlib.backends.backend_pdf import PdfPages
 
-
+import os
+os.chdir("/projects/home/rnormand/tmp/")
+exec(open("/projects/COVID_pregnancy/Code_publication/functions.py").read())
+data = an.read_h5ad("/projects/home/rnormand/tmp/AllCells_GEX.h5ad")
+cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad")
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
+hits_A = pd.read_excel("/projects/COVID_pregnancy/Code_publication/VDJdb_hits_TRA_wAlleles.xlsx")
+hits_B = pd.read_excel("/projects/COVID_pregnancy/Code_publication/VDJdb_hits_TRB_wAlleles.xlsx")
+expanded_clones = pd.read_csv("/projects/COVID_pregnancy/Code_publication/expanded_clones.csv")
+#################
 
 # Figure 5A - CD8T UMAP
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 colors = list(matplotlib.colormaps.get("tab10").colors + matplotlib.colormaps.get("Accent").colors)
 colors =[colors[x] for x in [0,1,2,3,4,5,6,15,8,9,10,11,16,13,12,7]]# rearraning colors to match patterns in UMAP
 ordered_clusters = cd8_data.obs["cluster_title"].unique().categories.to_list()
@@ -52,6 +61,68 @@ g.figure.savefig("CD8_markers_heatmap.pdf")
 # Figure 5B - differential abundance
 compute_DA_and_plot_per_category(data=cd8_data, category="Category", groupby="cluster_title", pdf=pdf, figsize=(5, 4), title="CD8 T cells", omit_clusters=["CD8T_7", "CD8T_8", "CD8T_16"], focus_clusters=["CD8T_2", "CD8T_3", "CD8T_4", "CD8T_12", "CD8T_13", "CD8T_14"])
 
-# Figure 5C - Clonal expansion per category
+# Figure 5C - Clonal expansion projected on a UMAP per category
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+clone_prop_umap_per_category(cd8_data, pdf_prefix="TCR_clone_prop_umap")
+
+
+# Figure 5D - bar plot of clonal expansion per cluster
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+cd8_data.obs["cluster_title"] = [x.split(":")[0] for x in cd8_data.obs["cluster_title"]]
+cd8_data.obs["cluster_title"]  = pd.Categorical(cd8_data.obs["cluster_title"] )
+cd8_data_wo_doublets = cd8_data[[x not in ["CD8T_7","CD8T_8","CD8T_16"] for x in cd8_data.obs["cluster_title"]],:].copy()
+samp_category2 = cd8_data_wo_doublets.obs[["sample","Category_2"]].drop_duplicates().reset_index(drop=True)
+covid_samples =  list(samp_category2.loc[[x != "Preg_CTRL" for x in samp_category2["Category_2"]],"sample"])
+cd8_data_wo_doublets = cd8_data_wo_doublets[[x in covid_samples for x in cd8_data_wo_doublets.obs["sample"]],:].copy()
+cd8_data_wo_doublets.obs["Category"] = cd8_data_wo_doublets.obs["Category_2"].map({"Preg_SEV":"Preg_COVID","Preg_ASX":"Preg_COVID","NonPreg_SEV":"NonPreg_COVID","NonPreg_ASX":"NonPreg_COVID"})
+with PdfPages("barplot_expanded_TCRs_2categories.pdf") as pdf:
+    plot_expanded_clones_per_clust(cd8_data_wo_doublets, pdf=pdf, figsize=(4,4), hue_order=["NonPreg_COVID", "Preg_COVID"], category="Category", pairs=["Preg_COVID", "NonPreg_COVID"], colors ={"Preg_COVID":"#EE6677", "NonPreg_COVID":"#4477AA"}, cluster_col='cluster_title', cluster_focus = ["CD8T_2","CD8T_3","CD8T_4"])
+
+
+
+# Figure 5F - COVID epitope hits projected on a UMAP
+hits_A = pd.read_excel("VDJdb_hits_TRA_wAlleles.xlsx")
+hits_B = pd.read_excel("VDJdb_hits_TRB_wAlleles.xlsx")
+
+# I'm missing J gene in the hits file - to get them back I will merge it with the "expanded_clones" file
+hits_A = hits_A.rename(columns={"CDR3":"TRA_cdr3","J":'TRA_j_gene'})
+hits_B = hits_B.rename(columns={"CDR3":"TRB_cdr3","J":'TRB_j_gene'})
+hits = hits_A[['sample', 'TRB_cdr3', 'TRB_v_gene', 'TRA_j_gene', 'TRA_cdr3','TRA_v_gene', 'Category_2',"Epitope", "Epitope.gene", "Epitope.species"]].append(hits_B[['sample', 'TRB_cdr3', 'TRB_v_gene', 'TRB_j_gene', 'TRA_cdr3','TRA_v_gene', 'Category_2', "Epitope", "Epitope.gene", "Epitope.species"]])
+expanded_clones = pd.read_csv("expanded_clones.csv")
+hits_final = hits.merge(expanded_clones, on=['sample', 'TRB_cdr3', 'TRB_v_gene', 'TRA_cdr3','TRA_v_gene', 'Category_2'], how="left")
+hits_final.pop("TRB_j_gene_x")
+hits_final.pop("TRA_j_gene_x")
+hits_final = hits_final.rename(columns={"TRA_j_gene_y":"TRA_j_gene", "TRB_j_gene_y":"TRB_j_gene"})
+clone_comps = ["TRA_cdr3", "TRB_cdr3", "TRA_v_gene", "TRB_v_gene", "TRA_j_gene", "TRB_j_gene"]
+hits_final["clone"] = hits_final[ clone_comps].apply(lambda row: "".join(row.values.astype(str)), axis=1)
+hits_final = hits_final.drop_duplicates()
+cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
+with PdfPages("COVID_hits.pdf") as pdf:
+    covid_hits = hits_final.loc[hits_final["Epitope.species"]=="SARS-CoV-2",:].copy() # 33 lines
+    covid_hits = covid_hits[["clone","Epitope.species"]].drop_duplicates() # 13 clones
+    cd8_data.obs = cd8_data.obs.reset_index().merge(covid_hits, on=["clone"], how="left").set_index("index")
+    g = sc.pl.umap(cd8_data, color="Epitope.species", size=7, palette=["red"], title="clones with hits to COVID", return_fig=True, show=False)
+    pdf.savefig(g)
+
+    # Quantify COVID hits per cluster
+    cd8_data = cd8_data[[x not in ['Doublets (CD4/CD8)','High-MT', 'Doublets (Myeloid/CD8)'] for x in cd8_data.obs["cluster_title"]],:].copy()
+    df_hits = cd8_data.obs[["Epitope.species","cluster_title"]].value_counts().reset_index().rename(columns={0:"COVID_hits"})
+    df_has_tcr = cd8_data.obs.loc[cd8_data.obs["has_tcr"]=="True",["cluster_title"]].value_counts().reset_index().rename(columns={0:"has_tcr_counts"})
+    df = df_hits.merge(df_has_tcr, on="cluster_title", how="left")
+    df["per_COVID_hit"] = (df["COVID_hits"]*100) / df["has_tcr_counts"]
+    df = df.sort_values(by="per_COVID_hit", ascending=False)
+    df["CD8T_subsets"] = [x.split(":")[0] for x in df["cluster_title"]]
+    df["CD8T_subsets"] = pd.Categorical(df["CD8T_subsets"], ordered=True, categories=df["CD8T_subsets"])
+    df = df.reset_index(drop=True)
+
+    plt.clf()
+    sns.set(rc={'figure.figsize': (4,4)})
+    sns.set_style("ticks")
+    ax = sns.barplot(data = df, y="CD8T_subsets", x ="per_COVID_hit", palette=["grey"], orient='h')
+    for i in range(len(ax.patches)):
+        p = ax.patches[i]
+        ax.annotate(str(df.loc[i, "COVID_hits"]), xy=(p.get_width(), p.get_y() + p.get_height() / 2), xytext=(5, 0), textcoords='offset points', ha="left", va="center", size=11)
+    ax.figure.tight_layout()
+    pdf.savefig(ax.figure)
 
 
