@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import scanpy as sc
-import seaborn as sns
 import pandas as pd
 import anndata as an
-from statannotations.Annotator import Annotator
 
 exec(open("functions.py").read())
 
