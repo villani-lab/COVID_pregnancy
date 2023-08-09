@@ -8,16 +8,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 sc.set_figure_params(dpi=300, dpi_save=300, vector_friendly=True)
 from matplotlib.backends.backend_pdf import PdfPages
 
-import os
-os.chdir("/projects/home/rnormand/tmp/")
-exec(open("/projects/COVID_pregnancy/Code_publication/functions.py").read())
-data = an.read_h5ad("/projects/home/rnormand/tmp/AllCells_GEX.h5ad")
-cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad")
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad")
-hits_A = pd.read_excel("/projects/COVID_pregnancy/Code_publication/VDJdb_hits_TRA_wAlleles.xlsx")
-hits_B = pd.read_excel("/projects/COVID_pregnancy/Code_publication/VDJdb_hits_TRB_wAlleles.xlsx")
-expanded_clones = pd.read_csv("/projects/COVID_pregnancy/Code_publication/expanded_clones.csv")
-#################
+exec(open("functions.py").read())
 
 # Figure 5A - CD8T UMAP
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
