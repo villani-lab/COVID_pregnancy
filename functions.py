@@ -344,3 +344,69 @@ def plot_hex_feature_plots(data, genes, ncols, nrows, figsize, gridsize, pdf):
 
     plt.tight_layout()
     pdf.savefig(fig)
+
+
+
+# Computes the mean z-score per cell of a set of genes
+# Scale each gene in the gene set across all cells in the data, then computes an average of z-scores of all the genes. Saves the score in the obs under <score_title> columns
+def signature_score_per_cell_2(data, gene_set, score_title) :
+    # Get rid of genes that aren't in data
+    orig_len = len(gene_set)
+    gene_set = [gene for gene in gene_set if gene in data.var_names]
+    print(str(len(gene_set)) + "/" + str(orig_len)  + " of the gene set genes are measured" )
+
+    # Limit the data to just those genes
+    dat = data[:,gene_set].X
+    dat = dat.toarray()
+    mean = dat.mean(axis=0)
+    var = dat.var(axis=0)
+    std = np.sqrt(var)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        dat = (dat - mean) / std
+    dat[dat < -5] = -5
+    dat[dat > 5] = 5
+
+    scores = dat.mean(axis = 1)
+    data.obs[score_title] = scores
+
+
+
+
+# This function plots a barplot per cluster of ISG_score for Pregnant vs. non-pregnant COVID patients ony (preg-ctrl is filtered out)
+# data - the anndata object
+# cluster_col - the column name in obs that includes the clustering
+# title - the title of the plot
+# pdf - the pdf object to plot the figure to
+# doublet_clusters - clusters to remove from the anndata object before z-score computation
+# shorten - should the cluster names be shortened? Relevant ot CD8 T cells that include clusters with longer names in anndata
+def plot_ISG_score_boxplot(data, cluster_col, title, pdf, doublet_clusters, shorten=False):
+    # filter for COVID patients only
+    data = data[data.obs["Category_2"]!='Preg_CTRL',:].copy()
+    data = data[[x not in doublet_clusters for x in data.obs[cluster_col]],:].copy()
+    data.obs["Category_1"] = data.obs["Category"].map({"Pregnant":'Preg_COVID','NonPreg':'NonPreg_COVID'})
+    df = data.obs[[cluster_col, "ISG_score", "Category_1","sample"]].groupby([cluster_col, "sample"]).mean().reset_index()
+    df = df.merge(data.obs[["sample", "Category_1"]].drop_duplicates().reset_index(drop=True), on="sample", how="left") # adding back Category_1
+
+    if (shorten):
+        df[cluster_col] = [x.split(":")[0] for x in df[cluster_col] ]
+
+    f = plt.figure(figsize=[4, 3])
+    ax = f.add_subplot()
+    sns.set_style("ticks")
+    g = sns.boxplot(data=df, x=cluster_col,y="ISG_score", hue="Category_1",   linewidth=0.25, fliersize=1, palette = Category_colors, ax=ax)
+    sns.stripplot(data=df, x=cluster_col,y="ISG_score", hue="Category_1", palette=["black", "black"], dodge=True, size=1.5)
+
+    pairs = [((x, "Preg_COVID"),(x,"NonPreg_COVID")) for x in list(set(df[cluster_col]))]
+    annotator = Annotator(data=df, x=cluster_col, y="ISG_score", hue="Category_1", ax=ax, pairs = pairs, hue_order=["NonPreg_COVID", "Preg_COVID"])
+    annotator.configure(test='Mann-Whitney', comparisons_correction="BH", line_width=0.25, fontsize=6).apply_and_annotate()
+
+    g.set_title(title, fontsize=10)
+    g.set_xlabel("Clusters", fontsize=8)
+    g.set_ylabel("ISG mean z-score", fontsize=8)
+    g.set_xticklabels(g.get_xticklabels(), rotation=90, fontsize=8)
+    g.set_yticklabels(g.get_yticklabels(), fontsize=8)
+    handles, labels = ax.get_legend_handles_labels()
+    plt.legend(handles[0:2], labels[0:2], bbox_to_anchor=(1.01, 1), loc="upper left", borderaxespad=0., fontsize=6)
+    f.tight_layout()
+    pdf.savefig(g.figure)
