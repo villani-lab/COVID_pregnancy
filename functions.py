@@ -86,7 +86,7 @@ def feature_plots_2(adata, gene_list, title, use_raw=False, hex=False, gridsize=
             fig.show()
 
 
-
+# This function computes the abundances of cell subsets, writes them into a CSV file and plots them as a box plot
 # data - anndata object
 # category - the category in obs to compute the differential analysis in - either "Category" which consists of the categories 'Preg_COVID'/ 'NonPreg_COVID', or "Category_2 that includes the categories 'NonPreg_ASX', 'NonPreg_SEV', 'Preg_ASX', 'Preg_CTRL', 'Preg_SEV'
 # pdf - pdf object to print the plots into
@@ -410,3 +410,28 @@ def plot_ISG_score_boxplot(data, cluster_col, title, pdf, doublet_clusters, shor
     plt.legend(handles[0:2], labels[0:2], bbox_to_anchor=(1.01, 1), loc="upper left", borderaxespad=0., fontsize=6)
     f.tight_layout()
     pdf.savefig(g.figure)
+
+
+# Ploting cell subset abundance with a separate scale per cluster
+# * requires to first run compute_DA_and_plot_per_category() to create the abundances CSV file
+# data - anndata object
+# category
+def plot_per_category_separate_scale(abundances_file, groupby, title, pdf, figsize=(5, 4)):
+    df = pd.read_csv(abundances_file)
+    df = df.loc[df["Category_2"] != "Preg_CTRL", :].copy()
+    df["Category"] = df["Category"].map({'NonPreg': "NonPreg_COVID", 'Pregnant': "Preg_COVID"})
+    df["Category"] = pd.Categorical(df["Category"], ordered=True, categories=["NonPreg_COVID", "Preg_COVID"])
+
+    plt.clf()
+    sns.set_style("ticks")
+    g = sns.FacetGrid(df, col=groupby, sharey=False, height=4, aspect=0.4)
+    g.map_dataframe(sns.boxplot, "Category", "freq_group", fliersize=2, linewidth=0.5, width=0.5,
+                    palette=Category_colors)
+    g.map_dataframe(sns.stripplot, "Category", "freq_group", palette=["black", "black"], size=2, dodge=True)
+    axes = g.axes.flatten()
+    for ax in axes:
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
+        ax.set_title(ax.get_title().split("= ")[1])
+    plt.tight_layout()
+    pdf.savefig(g.fig, bbox_inches="tight")
+
