@@ -20,7 +20,7 @@ sc.pl.umap(myeloid_data, color = 'cluster_title')
 sc.pl.umap(B_data, color = 'cluster_title')
 
 
-# ISG signature per lineage - Figure 6B, D, F, Supp figure 11C
+# ISG signature per lineage - Figure 6B, D, F, Supp Figure 11C
 # For every lineage we first compute Z-scores across all cells in the anndata object and then compute mean z-score for ISG gene set.
 ISGs = pd.read_excel("Supp Table 2 - ISGs.xlsx", header=None)[0].to_list() # Supplementary table 2
 
@@ -49,3 +49,4 @@ with PdfPages("ISG_score_B.pdf") as pdf:
     plot_ISG_score_boxplot(data=B_data, cluster_col="cluster_title", title="B_Plasma", pdf=pdf, doublet_clusters = ["Doublets (platelets/B)","high_ribo","high_mito","Doublets (T/B)"])
 
 
+# Figure 6H - see SuppFile_11.py file
