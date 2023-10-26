@@ -10,7 +10,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 exec(open("functions.py").read())
 
-# Figure 5A - CD8T UMAP
+# Figure 3A - CD8T UMAP
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 colors = list(matplotlib.colormaps.get("tab10").colors + matplotlib.colormaps.get("Accent").colors)
 colors =[colors[x] for x in [0,1,2,3,4,5,6,15,8,9,10,11,16,13,12,7]]# rearraning colors to match patterns in UMAP
@@ -24,7 +24,7 @@ with PdfPages("CD8T_UMAP.pdf") as pdf:
     pdf.savefig(g)
 
 
-# Figure 5A - CD8T heatmap
+# Figure 3A - CD8T heatmap
 genes2 = ['CD4','CD40LG','ITGB1', #c4
           'GZMH','NKG7',"CST7", #c3
           'KLRD1','FCGR3A','GZMB', #c2
@@ -49,15 +49,15 @@ plt.tight_layout()
 g.figure.savefig("CD8_markers_heatmap.pdf")
 
 
-# Figure 5B - differential abundance
+# Figure 3B - differential abundance
 compute_DA_and_plot_per_category(data=cd8_data, category="Category", groupby="cluster_title", pdf=pdf, figsize=(5, 4), title="CD8 T cells", omit_clusters=["CD8T_7", "CD8T_8", "CD8T_16"], focus_clusters=["CD8T_2", "CD8T_3", "CD8T_4", "CD8T_12", "CD8T_13", "CD8T_14"])
 
-# Figure 5C - Clonal expansion projected on a UMAP per category
+# Figure 3C - Clonal expansion projected on a UMAP per category
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 clone_prop_umap_per_category(cd8_data, pdf_prefix="TCR_clone_prop_umap")
 
 
-# Figure 5D - bar plot of clonal expansion per cluster
+# Figure 3D - bar plot of clonal expansion per cluster
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 cd8_data.obs["cluster_title"] = [x.split(":")[0] for x in cd8_data.obs["cluster_title"]]
 cd8_data.obs["cluster_title"]  = pd.Categorical(cd8_data.obs["cluster_title"] )
@@ -70,7 +70,7 @@ with PdfPages("barplot_expanded_TCRs_2categories.pdf") as pdf:
     plot_expanded_clones_per_clust(cd8_data_wo_doublets, pdf=pdf, figsize=(4,4), hue_order=["NonPreg_COVID", "Preg_COVID"], category="Category", pairs=["Preg_COVID", "NonPreg_COVID"], colors ={"Preg_COVID":"#EE6677", "NonPreg_COVID":"#4477AA"}, cluster_col='cluster_title', cluster_focus = ["CD8T_2","CD8T_3","CD8T_4"])
 
 
-# Figure 5E - Gene expression and protein expression characterizing CD8T_3
+# Figure 3E - Gene expression and protein expression characterizing CD8T_3
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 cd8_adt = an.read_h5ad("CD8T_ADT.h5ad") # From GSE239452
 
@@ -80,7 +80,7 @@ with PdfPages("ADT_features.pdf") as pdf:
     plot_hex_feature_plots(data=cd8_adt, genes=["prot_CD8", "prot_CD4","prot_CD45RO","prot_CD150","prot_CD57","prot_KLRG1"], ncols=3, nrows=3, figsize=(5, 4),gridsize=(200, 200), pdf=pdf)
 
 
-# Figure 5F, G - COVID epitope hits projected on a UMAP
+# Figure 3F, G - COVID epitope hits projected on a UMAP
 hits_A = pd.read_excel("VDJdb_hits_TRA_wAlleles.xlsx")
 hits_B = pd.read_excel("VDJdb_hits_TRB_wAlleles.xlsx")
 
@@ -126,9 +126,4 @@ with PdfPages("COVID_hits.pdf") as pdf:
     pdf.savefig(ax.figure)
 
 
-# Fig 5H - CD8 TCR diversity
-# part 1: prepare data for R code
-cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
-curr = cd8_data[[x not in ['Doublets (CD4/CD8)','Doublets (Myeloid/CD8)','High-MT'] for x in cd8_data.obs["cluster_title"]],:].copy()
-curr.obs[["sample","clone","Category_2"]].to_csv("clones_per_patient.csv")
-# => move to R code to compute Hill diversity index and to plot figure
+
