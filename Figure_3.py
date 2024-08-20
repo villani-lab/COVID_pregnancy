@@ -25,14 +25,14 @@ with PdfPages("CD8T_UMAP.pdf") as pdf:
 
 
 # Figure 3A - CD8T heatmap
-genes2 = ['CD4','CD40LG','ITGB1', #c4
+genes2 = ["CD8A","CD8B","CD6",'CD4','CD40LG','ITGB1',"PRF1","GNLY","FGFBP2", #c4
           'GZMH','NKG7',"CST7", #c3
           'KLRD1','FCGR3A','GZMB', #c2
           "CXCR4","TGFB1","NR4A2", #c10
           "KLRF1","FCER1G","STMN1", # c15
           "CXCR3", "HMGB2", "PRDX3", "TALDO1", #c9
           "CMC1", "CD74", "GZMK", #c1
-          "KLRB1", "IL7R", "CXCR6", # c12
+          "KLRB1", "IL7R", "CXCR6","RORC", # c12
           "TNFAIP3", #c13
           "TRAV1-2", "IL23R", "AQP3", #c14
           "LTB", "TCF7",	"TIGIT", #c6
@@ -46,7 +46,7 @@ plt.xticks(rotation=90)
 g.fig.set_size_inches(5,3)
 g.figure.tight_layout()
 plt.tight_layout()
-g.figure.savefig("CD8_markers_heatmap.pdf")
+g.figure.savefig("CD8_markers_heatmap_v3.pdf")
 
 
 # Figure 3B - differential abundance
