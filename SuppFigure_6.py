@@ -62,24 +62,29 @@ g.figure.savefig("percent_mito.pdf")
 # Supp Figure 6G - Expression of CD4 and CD8 in various cell subsets
 cd8_data = an.read_h5ad("CD8T_GEX_TCR.h5ad") # From GSE239452
 cd4_data = an.read_h5ad("CD4T_GEX_TCR.h5ad") # From GSE239452
-cluster_CD8T_3 = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_3: CD4, CD40LG, ITGB1, GZMH',:].copy()
+cluster_CD8T_3 = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_3: CD4, CD40LG, ITGB1, GZMH','CD8T_7: CXCR4, TGFB1, NR4A2',:].copy()
+#cluster_CD8T_7 = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_7: CXCR4, TGFB1, NR4A2',:].copy()
 cd8_pos = cd8_data[cd8_data.obs["cluster_title"]=='CD8T_2: NKG7, GZMH, CST7',:].copy()
 cd4_pos = cd4_data[cd4_data.obs['leiden_res_1']=='5',:].copy()
 clear_data_2(cluster_CD8T_3, ["sample"])
+#clear_data_2(cluster_CD8T_7, ["sample"])
 clear_data_2(cd8_pos, ["sample"])
 clear_data_2(cd4_pos, ["sample"])
-x = cluster_CD8T_3.concatenate(cd8_pos, cd4_pos, batch_categories = ["CD8T_3","CD8T_2","CD4_5"], join="inner")
+#x = cluster_CD8T_3.concatenate(cluster_CD8T_7, cd8_pos, cd4_pos, batch_categories = ["CD8T_3","CD8T_7","CD8T_2","CD4_5"], join="inner")
+x = cluster_CD8T_3.concatenate(cd8_pos, cd4_pos, batch_categories = ["CD8T_3","CD8T_7","CD8T_2","CD4_5"], join="inner")
 x.obs["group"] = x.obs["sample"].astype(str)+"$"+x.obs["batch"].astype(str)
 x2 = x.to_df().groupby(x.obs["group"]).mean()
 x3 = x2[["CD4","CD8A","CD8B"]].reset_index().melt(id_vars="group")
 x3["sample"] = [x.split("$")[0] for x in x3["group"]]
 x3["batch"] = [x.split("$")[1] for x in x3["group"]]
 plt.clf()
-sns.boxplot(data = x3, x="featurekey",y="value", hue="batch")
+fig,ax = plt.subplots(figsize=(5,5))
+sns.boxplot(data = x3, x="featurekey",y="value", hue="batch",ax=ax)
 sns.stripplot(data = x3, x="featurekey",y="value", hue="batch", dodge=True, palette=["black","black","black"], size=2)
 plt.legend(bbox_to_anchor=(1, 1), loc='upper left', fontsize=8)
 plt.tight_layout()
 plt.show()
+fig.savefig("CD8T7_CD8T3_boxplots.pdf")
 
 
 # Supp Figure 6H - T+NK interim object - UMAP
