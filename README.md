@@ -1,2 +1,2 @@
 # COVID_pregnancy
-Code for all figures in the COVID pregnancy project, where we study PBMCs of pregnant and non-pregnant women that are either healthy or have COVID.
+Code for all the single cell figures of the manuscript titled "SARS-CoV-2 infection elucidates unique features of pregnancy-specific immunity".
