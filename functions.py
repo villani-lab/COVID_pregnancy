@@ -435,3 +435,48 @@ def plot_per_category_separate_scale(abundances_file, groupby, title, pdf, figsi
     plt.tight_layout()
     pdf.savefig(g.fig, bbox_inches="tight")
 
+
+
+
+
+def calc_pseudobulk(raw_adata, save_name, cluster_label, sample_label, condition_label, thresh_cells=20, save=True):
+    #raw_adata = sc.AnnData(X=adata.raw[adata.obs_names, adata.var_names].X,obs=adata.obs[[cluster_label, sample_label]],var=pd.DataFrame(index=adata.var_names.values))
+    samp_cond = raw_adata.obs[[sample_label,condition_label]].drop_duplicates().set_index(sample_label).to_dict()[condition_label]
+    # get relevant obs and var
+    gene_sum_dict = {}
+    cell_num_dict = {}
+    # Iterate across samples
+    for samp in set(raw_adata.obs[sample_label]):
+        # Iterate across clusters
+        for clust in set(raw_adata.obs[cluster_label]):
+            dat = raw_adata[(raw_adata.obs[sample_label] == samp) & (raw_adata.obs[cluster_label] == clust)]
+            # Add info to my dictionaries
+            key = clust+"-"+samp+"-"+samp_cond[samp]
+            cell_num_dict[key] = {'n_cells': len(dat), 'cluster': clust, 'sample': samp}
+            # Do not include samples with low amount of cells for this cluster
+            if len(dat) < thresh_cells:
+                continue
+            # Sum the counts
+            count_sum = np.array(dat.X.sum(axis=0)).flatten()
+            gene_sum_dict[key] = count_sum
+
+    count_mtx = pd.DataFrame(gene_sum_dict, index=raw_adata.var_names)
+    meta_mtx = pd.DataFrame.from_dict(cell_num_dict, orient='index', columns=['n_cells', 'cluster', 'sample'])
+    # Normalize the matrix
+    cols, index = count_mtx.index, count_mtx.columns
+    print("Create a log-normed matrix")
+    norm_mtx = csr_matrix(count_mtx.T)
+    scale = 100000 / norm_mtx.sum(axis=1).A1
+    norm_mtx.data *= np.repeat(scale, np.diff(norm_mtx.indptr))
+    norm_mtx.data = np.log1p(norm_mtx.data)
+    # norm_mtx = pd.DataFrame.sparse.from_spmatrix(norm_mtx, columns=cols, index=index)
+    norm_adata = sc.AnnData(X=norm_mtx, obs=pd.DataFrame(index=index), var=pd.DataFrame(index=cols))
+    norm_adata.obs["CellPopulation"] = [x.split("-")[0] for x in list(index)]
+    norm_adata.obs[sample_label] = [x.split("-")[1] for x in list(index)]
+    norm_adata.obs[condition_label] = [x.split("-")[2] for x in list(index)]
+
+    if save:
+        meta_mtx.to_csv(save_name+"_pseudobulk_meta.csv")
+        sc.write(save_name+"_PB_norm_counts.h5ad", norm_adata)
+    else:
+        return(norm_adata)
